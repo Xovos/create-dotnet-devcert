@@ -1,40 +1,46 @@
 # create-dotnet-devcert
 
-A simple script that creates and trusts a self-signed development certificate for dotnet on Ubuntu and Arch based distributions.
+A simple script that creates and trusts a local development CA and a localhost server certificate for .NET on Ubuntu, Arch, and Fedora based distributions.
 
 ## What does the script do
 
-The script uses openssl to create a self-signed certificate. The certificate will then be imported and trusted at:
+The script uses OpenSSL to create a persistent local CA and a separate server certificate for `localhost`. The CA is installed and trusted at:
 
-- System certificates - to enable service-to-service communication
-- User nssdb - to trust the certificate in supported application like Chromium or Microsoft Edge
-- Snap Chromium nssdb - to trust the certificate in Chromium if installed via snap
-- Snap Postman nssdb - to trust the certificate in Postman if installed via snap
+- The system certificate store, for local applications and service-to-service communication
+- Existing user NSS databases, including Chromium and Postman Snap databases when present
 
-In addition the certificate will be imported into dotnet so that it will be used as a development certificate in ASP.NET Core.
+The server certificate is signed by the local CA and exported as a PFX for ASP.NET Core or Docker. The CA is kept between runs so newly generated server certificates remain trusted. The CA private key must remain private and must never be copied to a server or shared.
+
+Generated files:
+
+- CA certificate: `${XDG_DATA_HOME:-$HOME/.local/share}/dotnet-devcert/localhost-ca.crt`
+- CA private key: `${XDG_DATA_HOME:-$HOME/.local/share}/dotnet-devcert/localhost-ca.key`
+- Server PFX: `$HOME/.aspnet/https/localhost.pfx`
+- Public server certificate: `$HOME/.aspnet/https/localhost.crt`
 
 ## Prerequisites
 
 - dotnet-sdk (Version >= 5.0)
+- openssl
 - libnss3-tools
-  - ubuntu: `sudo apt install libnss3-tools`
-  - arch: `sudo pacman -S nss`
-  - fedora: `sudo dnf install openssl nss-tools`
+  - Ubuntu: `sudo apt install openssl libnss3-tools`
+  - Arch: `sudo pacman -S openssl nss`
+  - Fedora: `sudo dnf install openssl nss-tools`
 
 ## Usage
 
 Simply run the script needed for your distribution.
 
 Ubuntu based distributions:
-`./scripts/ubuntu-create-dotnet-devcert`
+`sh ./scripts/ubuntu-create-dotnet-devcert.sh`
 
 Arch based distributions:
-`./scripts/arch-create-dotnet-devcert`
+`sh ./scripts/arch-create-dotnet-devcert.sh`
 
 Fedora based distributions:
-`./scripts/fedora-create-dotnet-devcert`
+`sh ./scripts/fedora-create-dotnet-devcert.sh`
 
-Use the `-s` to also save the certificate into the home folder so it can be manually imported into other programs.
+Use `-s` to also copy the CA certificate, public server certificate, and PFX to your home directory for manual import or use. Do not copy or share the CA private key.
 
 ## More info
 
